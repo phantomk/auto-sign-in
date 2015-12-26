@@ -49,26 +49,63 @@ createSecretKey = (size) ->
     pos = Math.floor pos
     key = key + keys.charAt pos
     i++
- key
-
+  key
 
 modulus = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7'
 nonce = '0CoJUm6Qyw8W8jud'
 pubKey = '010001'
 Crypto =
     MD5: (text) ->
-        return crypto.createHash('md5').update(text).digest 'hex'
+      crypto.createHash('md5').update(text).digest 'hex'
     aesRsaEncrypt: (text) ->
-        secKey = createSecretKey(16)
-        params: aesEncrypt aesEncrypt(text, nonce), secKey
-        encSecKey: rsaEncrypt secKey, pubKey, modulus
+      secKey = createSecretKey(16)
+      params: aesEncrypt aesEncrypt(text, nonce), secKey
+      encSecKey: rsaEncrypt secKey, pubKey, modulus
 
+
+header =
+  'Accept-Encoding': 'gzip, deflate'
+  'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6,zh-TW;q=0.4'
+  'Connection': 'keep-alive'
+  'Content-Length': '418'
+  'Content-Type': 'application/x-www-form-urlencoded'
+  'Host': 'music.163.com'
+  'Origin': 'http://music.163.com'
+  'Referer': 'http://music.163.com/discover'
+  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36'
+
+httpRequest = (method, url, data, callback) ->
+  ret
+  if method is 'post'
+    ret = request.post(url).send data
+  else
+    ret = request.get(url).query data
+    cookie = fm.getCookie()
+  if cookie
+    ret.set 'Cookie', cookie
+  ret.set(header).timeout(10000).end callback
 # 登录
 login = (userName, password) ->
-  user = {userName, password}
-  data = {params, encSecKey}
-  return data
+  data =
+    userName: userName
+    password: Crypto.MD5 password
+  endata = Crypto.aesRsaEncrypt(JSON.stringify(data))
+  login_url = 'http://music.163.com/weapi/login/'
+  httpRequest 'post', login_url, endata, (err, res) ->
+    if err
+      callback
+        msg: '[login]http error ' + err
+        type: 1
+      return
+    data = JSON.parse res.text
+    unless data.code is 200
+      callback
+        msg: "[login]username or password incorrect"
+        type: 0
+
 
 # TODO: 完善请求
-httpRequest 'post', url, data, (err, res) ->
-  url = 'http://music.163.com/weapi/point/dailyTask'
+# 自动签到
+dailyTask = ->
+  dailyTask_url = 'http://music.163.com/weapi/point/dailyTask/'
+  httpRequest 'post', dailyTask_url, endata, (err, res) ->
