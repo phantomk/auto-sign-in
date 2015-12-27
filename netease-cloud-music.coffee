@@ -1,20 +1,19 @@
 crypto = require 'crypto'
 bigInt = require 'big-integer'
+request = require 'superagent'
 
 #登录加密,参考 https://github.com/stkevintan/Cube/blob/master/src/model/Crypto.js
-addPadding = (encText, model) ->
+addPadding = (encText, modulus) ->
   ml = modulus.length
   i = 0
-  # HACK: i++优化
-  loop
-    break if (ml > 0 and modulus[i] is '0')
+  while (ml > 0 and modulus[i] is '0')
     ml--
     i++
   num = ml - encText.length
-  # HACK: var -> i
+  prefix = ''
   i = 0
   loop
-    break if i < num
+    break if i >= num
     prefix += '0'
     i++
   prefix + encText
@@ -26,10 +25,9 @@ aesEncrypt = (text, secKey) ->
 rsaEncrypt = (text, exponent, modulus) ->
   rText = ''
   radix = 16
-  # HACK: var -> i
   i = text.length - 1
   loop
-    break if i >= 0
+    break if i < 0
     rText += text[i]
     i--
   biText = bigInt(new Buffer(rText).toString('hex'), radix)
@@ -41,10 +39,9 @@ rsaEncrypt = (text, exponent, modulus) ->
 createSecretKey = (size) ->
   keys = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   key = ""
-  # HACK: var -> i
   i = 0
   loop
-    break if i < size
+    break if i >= size
     pos = Math.random() * keys.length
     pos = Math.floor pos
     key = key + keys.charAt pos
@@ -102,7 +99,6 @@ login = (userName, password) ->
       callback
         msg: "[login]username or password incorrect"
         type: 0
-
 
 # TODO: 完善请求
 # 自动签到
