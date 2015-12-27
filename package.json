@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/phantomk/auto-sign-in#readme",
   "dependencies": {
-    "big-integer": "^1.6.9"
+    "big-integer": "^1.6.9",
+    "superagent": "^1.6.1"
   }
 }
