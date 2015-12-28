@@ -59,49 +59,36 @@ Crypto =
       params: aesEncrypt aesEncrypt(text, nonce), secKey
       encSecKey: rsaEncrypt secKey, pubKey, modulus
 
-
 header =
-  'Accept-Encoding': 'gzip, deflate'
-  'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6,zh-TW;q=0.4'
+  'Accept': '*/*'
+  'Accept-Encoding': 'gzip,deflate,sdch'
+  'Accept-Language': 'zh-CN,en-US;q=0.7,en;q=0.3'
   'Connection': 'keep-alive'
-  'Content-Length': '418'
-  'Content-Type': 'application/x-www-form-urlencoded'
+  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
   'Host': 'music.163.com'
-  'Origin': 'http://music.163.com'
-  'Referer': 'http://music.163.com/discover'
-  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36'
+  'Cookie': 'appver=1.5.0.75771;'
+  'Referer': 'http://music.163.com/'
+  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:39.0) Gecko/20100101 Firefox/39.0'
 
 httpRequest = (method, url, data, callback) ->
-  ret
-  if method is 'post'
-    ret = request.post(url).send data
-  else
-    ret = request.get(url).query data
-    cookie = fm.getCookie()
-  if cookie
-    ret.set 'Cookie', cookie
+  ret = request.post(url).send data
   ret.set(header).timeout(10000).end callback
-# 登录
-login = (userName, password) ->
-  data =
+
+# 自动签到
+dailyTask = (userName, password, callback) ->
+  body =
     userName: userName
     password: Crypto.MD5 password
-  endata = Crypto.aesRsaEncrypt(JSON.stringify(data))
-  login_url = 'http://music.163.com/weapi/login/'
-  httpRequest 'post', login_url, endata, (err, res) ->
+  enbody = Crypto.aesRsaEncrypt(JSON.stringify(body))
+  dailyTask_url = 'http://music.163.com/weapi/point/dailyTask/?csrf_token='
+  httpRequest 'post', dailyTask_url, enbody, (err, res) ->
     if err
       callback
-        msg: '[login]http error ' + err
+        msg: 'sign in http error ' + err
         type: 1
       return
     data = JSON.parse res.text
     unless data.code is 200
       callback
-        msg: "[login]username or password incorrect"
+        msg: "username or password incorrect"
         type: 0
-
-# TODO: 完善请求
-# 自动签到
-dailyTask = ->
-  dailyTask_url = 'http://music.163.com/weapi/point/dailyTask/'
-  httpRequest 'post', dailyTask_url, endata, (err, res) ->
